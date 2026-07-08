@@ -1,0 +1,138 @@
+-- =====================================================================
+-- Centro Asia CRI Alcamo - Query complete per la creazione del database
+-- Compatibile con MariaDB / MySQL (XAMPP locale, Dasabo, FreeHosting, ecc.)
+--
+-- ISTRUZIONI:
+-- 1. Sostituisci "centro_asia_cri" con il nome del tuo database se diverso
+-- 2. Su hosting condiviso: crea prima il database dal pannello di controllo,
+--    poi esegui solo dalla riga "USE ..." in poi (salta CREATE DATABASE)
+-- 3. In locale (XAMPP): puoi eseguire tutto il file da phpMyAdmin o da riga
+--    di comando: mysql -u root -p < creazione_database.txt
+-- =====================================================================
+
+-- Creazione del database (salta questo passaggio se il DB esiste già)
+CREATE DATABASE IF NOT EXISTS centro_asia_cri
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE centro_asia_cri;
+
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ---------------------------------------------------------------------
+-- Tabella attivita
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS attivita (
+    id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    titolo            VARCHAR(255) NOT NULL,
+    descrizione       TEXT NULL,
+    responsabile      VARCHAR(150) NULL,
+    note_interne      VARCHAR(255) NULL COMMENT 'Note visibili solo in admin (es. "data da destinarsi")',
+    data_attivita     DATE NULL COMMENT 'NULL se data ancora da definire',
+    ora_inizio        TIME NULL,
+    ora_fine          TIME NULL,
+    posti_max         SMALLINT UNSIGNED NOT NULL DEFAULT 20,
+    data_da_definire  TINYINT(1) NOT NULL DEFAULT 0,
+    attiva            TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Se 0, non visibile/iscrivibile sul sito pubblico',
+    creato_il         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aggiornato_il     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_data (data_attivita),
+    INDEX idx_attiva (attiva)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- Tabella iscrizioni
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS iscrizioni (
+    id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    attivita_id       INT UNSIGNED NOT NULL,
+    nome              VARCHAR(100) NOT NULL,
+    cognome           VARCHAR(100) NOT NULL,
+    telefono          VARCHAR(30) NOT NULL,
+    eta               TINYINT UNSIGNED NOT NULL,
+    note              VARCHAR(500) NULL COMMENT 'Bisogni/esigenze particolari indicati dal partecipante',
+    iscritto_il       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_iscrizioni_attivita FOREIGN KEY (attivita_id)
+        REFERENCES attivita(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_attivita (attivita_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- Tabella amministratori
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS admin_utenti (
+    id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    username          VARCHAR(60) NOT NULL UNIQUE,
+    password_hash     VARCHAR(255) NOT NULL,
+    nome_visualizzato VARCHAR(150) NULL,
+    creato_il         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ---------------------------------------------------------------------
+-- Utente amministratore di default
+-- Username: admin   Password: CambiaMi!2026
+-- IMPORTANTE: cambiare subito la password dopo il primo accesso
+-- (vedi admin/cambia_password.php), l'hash sotto corrisponde a "CambiaMi!2026"
+-- ---------------------------------------------------------------------
+INSERT INTO admin_utenti (username, password_hash, nome_visualizzato) VALUES
+('admin', '$2b$10$Qbt4pBqEkVSW6flf58dPK.pCrwspR2Xe3/wSNDSZcBEwiLx8SXDYe', 'Amministratore CRI Alcamo');
+
+-- =====================================================================
+-- Dati iniziali: calendario attività Centro Asia (luglio-settembre 2026)
+-- Basato sul calendario fornito, con le seguenti correzioni concordate:
+--  - Torneo di Burraco: rimandato, data da destinarsi
+--  - Musicoterapia: aggiunte le sessioni del 29 e 30 luglio, con due
+--    turni distinti per ciascuna giornata (17:00-18:00 e 18:00-19:00)
+--  - Beach Volley: in attesa delle specifiche dedicate (verranno
+--    aggiornate da admin appena disponibili)
+-- =====================================================================
+
+INSERT INTO attivita (titolo, responsabile, note_interne, data_attivita, ora_inizio, ora_fine, posti_max, data_da_definire, attiva) VALUES
+('Alla scoperta di: Biologia e Zoologia marina - Campioni', 'Mariano Dara', NULL, '2026-07-01', '16:00', '19:00', 20, 0, 1),
+('Fare Arte', 'Mariangela Mannino', NULL, '2026-07-03', '17:00', '19:00', 20, 0, 1),
+('Laboratorio di danza - scopriamo il mondo', 'Carla Ferro', NULL, '2026-07-07', '17:00', '19:00', 20, 0, 1),
+('Alla scoperta di: Biologia e Zoologia marina - La sabbia', 'Mariano Dara', NULL, '2026-07-08', '16:00', '19:00', 20, 0, 1),
+('Torneo di Burraco', NULL, 'Data rimandata, da destinarsi', NULL, NULL, NULL, 20, 1, 1),
+('Cuntami lu cuntu', NULL, NULL, '2026-07-13', NULL, NULL, 20, 0, 1),
+('Musicoterapia', NULL, NULL, '2026-07-14', '17:00', '19:00', 20, 0, 1),
+('Alla scoperta di: Biologia e Zoologia marina - L''acqua di mare', 'Mariano Dara', NULL, '2026-07-15', '16:00', '19:00', 20, 0, 1),
+('Fare Arte', 'Mariangela Mannino', NULL, '2026-07-17', '17:00', '19:00', 20, 0, 1),
+('Thai Chi', 'Rami Salo', NULL, '2026-07-17', '19:00', '20:00', 20, 0, 1),
+('Laboratorio di danza - scopriamo il mondo', 'Carla Ferro', NULL, '2026-07-21', '17:00', '19:00', 20, 0, 1),
+('Giochi senza Frontiere', NULL, NULL, '2026-07-27', NULL, NULL, 20, 0, 1),
+('Musicoterapia', NULL, NULL, '2026-07-28', '17:00', '19:00', 20, 0, 1),
+('Musicoterapia', NULL, 'Sessione aggiuntiva', '2026-07-29', '17:00', '18:00', 20, 0, 1),
+('Musicoterapia', NULL, 'Sessione aggiuntiva', '2026-07-29', '18:00', '19:00', 20, 0, 1),
+('Musicoterapia', NULL, 'Sessione aggiuntiva', '2026-07-30', '17:00', '18:00', 20, 0, 1),
+('Musicoterapia', NULL, 'Sessione aggiuntiva', '2026-07-30', '18:00', '19:00', 20, 0, 1),
+('Fare Arte', 'Mariangela Mannino', NULL, '2026-07-31', '17:00', '19:00', 20, 0, 1),
+('Thai Chi', 'Rami Salo', NULL, '2026-07-31', '19:00', '20:00', 20, 0, 1),
+('Torneo Calcio Balilla', NULL, NULL, '2026-08-01', '16:00', '19:00', 20, 0, 1),
+('Torneo Calcio Balilla', NULL, NULL, '2026-08-02', '16:00', '19:00', 20, 0, 1),
+('Musicoterapia', NULL, NULL, '2026-08-04', '17:00', '19:00', 20, 0, 1),
+('Beach Volley', NULL, 'In attesa di specifiche dedicate', '2026-08-05', NULL, NULL, 20, 0, 1),
+('Beach Volley', NULL, 'In attesa di specifiche dedicate', '2026-08-06', NULL, NULL, 20, 0, 1),
+('Beach Volley', NULL, 'In attesa di specifiche dedicate', '2026-08-07', NULL, NULL, 20, 0, 1),
+('Thai Chi', 'Rami Salo', NULL, '2026-08-07', '19:00', '20:00', 20, 0, 1),
+('Beach Volley', NULL, 'In attesa di specifiche dedicate', '2026-08-08', NULL, NULL, 20, 0, 1),
+('Beach Volley', NULL, 'In attesa di specifiche dedicate', '2026-08-09', NULL, NULL, 20, 0, 1),
+('Stelle da osservare', NULL, NULL, '2026-08-09', '21:30', '23:00', 20, 0, 1),
+('Laboratorio di danza - scopriamo il mondo', 'Carla Ferro', NULL, '2026-08-11', '17:00', '19:00', 20, 0, 1),
+('Alla scoperta di: Biologia e Zoologia marina - Animali Vivi', 'Mariano Dara', NULL, '2026-08-12', '16:00', '19:00', 20, 0, 1),
+('Musicoterapia', NULL, NULL, '2026-08-18', '17:00', '19:00', 20, 0, 1),
+('Alla scoperta di: Biologia e Zoologia marina - Fanerogame (piante) e alghe', 'Mariano Dara', NULL, '2026-08-19', '16:00', '19:00', 20, 0, 1),
+('Fare Arte', 'Mariangela Mannino', NULL, '2026-08-21', '17:00', '19:00', 20, 0, 1),
+('Thai Chi', 'Rami Salo', NULL, '2026-08-21', '19:00', '20:00', 20, 0, 1),
+('Beach Soccer', NULL, 'In attesa di specifiche dedicate', '2026-08-22', NULL, NULL, 20, 0, 1),
+('Beach Soccer', NULL, 'In attesa di specifiche dedicate', '2026-08-23', NULL, NULL, 20, 0, 1),
+('Beach Soccer', NULL, 'In attesa di specifiche dedicate', '2026-08-24', NULL, NULL, 20, 0, 1),
+('Beach Soccer', NULL, 'In attesa di specifiche dedicate', '2026-08-25', NULL, NULL, 20, 0, 1),
+('Alla scoperta di: Biologia e Zoologia marina - L''anatomia dei pesci', 'Mariano Dara', NULL, '2026-08-26', '16:00', '19:00', 20, 0, 1),
+('Beach Soccer', NULL, 'In attesa di specifiche dedicate', '2026-08-27', NULL, NULL, 20, 0, 1),
+('Laboratorio di danza - scopriamo il mondo', 'Carla Ferro', NULL, '2026-09-01', '17:00', '19:00', 20, 0, 1),
+('Fare Arte', 'Mariangela Mannino', NULL, '2026-09-04', '17:00', '19:00', 20, 0, 1),
+('Torneo di Bocce', NULL, NULL, '2026-09-05', NULL, NULL, 20, 0, 1),
+('Thai Chi', 'Rami Salo', NULL, '2026-09-11', '19:00', '20:00', 20, 0, 1);
